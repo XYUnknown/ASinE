@@ -1,4 +1,4 @@
-# A Study of Equalities
+# A Study in Equalities
 
 Equality is hard.
 
