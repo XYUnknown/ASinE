@@ -45,7 +45,9 @@ eq-slide n sz sp = sz + suc (sp + n · suc sp)
 
 eq-tiling : (n m sz sp : ℕ) → sz + n · suc sp + m · suc (n + sp + n · sp) ≡ sz + (n + m · suc n) · suc sp
 eq-tiling n zero sz sp =  (+-zero (sz + n · suc sp)) ∙ cong (λ y → sz + y · suc sp) (sym (+-zero n))
-eq-tiling n (suc m) sz sp = {!!} -- sz + n · suc sp + suc (n + sp + n · sp + m · suc (n + sp + n · sp))
+eq-tiling zero (suc m) sz sp =  cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)
+                             ∙  cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) ))) --
+eq-tiling (suc n) (suc m) sz sp = {!!} -- sz + n · suc sp + suc (n + sp + n · sp + m · suc (n + sp + n · sp))
   -- ≡⟨⟩
   --  {!!}
 
@@ -95,7 +97,16 @@ slide-take-drop : {n m : ℕ} → {A : Set} → (sz sp : ℕ) → (xs : Vec A (s
     ≡ slide sz sp (subst (Vec A) (eq-tiling n (suc m) sz sp) xs)
 slide-take-drop {zero} {m} {A} sz sp xs = subst (Vec A) (+-zero sz) (take (sz + zero) xs) ∷
     slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
-  ≡⟨ cong (_∷ slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))) {!!} ⟩
+  ≡⟨ cong₂ _∷_ (substCommSlice (λ i →  (Vec A (i + _))) (Vec A) (λ n → take n) (+-zero sz) xs) refl ⟩
+    take sz (subst (λ x → Vec A (x + suc (sp + zero + m · suc (sp + zero))))  (+-zero sz)  xs) ∷
+    slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
+  ≡⟨⟩
+    take sz (subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs) ∷
+    slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
+  ≡⟨ cong₂ _∷_ (constSubstCommSlice (λ a → Vec A (sz + suc a)) (Vec A sz) (λ _ → take sz)  ((cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) ((subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs))) refl ⟩
+    take sz (subst (Vec A) (cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) (subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs)) ∷
+    slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
+  ≡⟨ cong₂ _∷_ (cong (take sz) (sym (substComposite (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) (cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) xs))) refl ⟩
     take sz (subst (Vec A) (eq-tiling zero (suc m) sz sp) xs) ∷
     slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
   ≡⟨⟩
@@ -119,3 +130,4 @@ slideJoin {n} {suc m} {A} sz sp xs = sym ( slide sz sp (take (sz + n · suc sp) 
   ≡⟨ cong (slide sz sp (take (sz + n · suc sp) xs) ++_)
      (sym (slideJoin {n} {m} {A} sz sp (drop (suc (n + sp + n · sp)) (subst (Vec A) (eq-slide m (sz + n · suc sp) (n + sp + n · sp)) xs)))) ⟩
     {!!})
+ 
