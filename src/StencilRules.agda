@@ -6,6 +6,7 @@ open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Transport
 open import Cubical.Data.Nat
+open import Cubical.Data.Nat.Order
 open import Cubical.Data.Vec using (Vec; _∷_; []; _++_)
 
 id : {T : Set} → T → T
@@ -50,6 +51,15 @@ eq-tiling zero (suc m) sz sp =  cong (λ x → x + suc (sp + zero + m · suc (sp
 eq-tiling (suc n) (suc m) sz sp = {!!} -- sz + n · suc sp + suc (n + sp + n · sp + m · suc (n + sp + n · sp))
   -- ≡⟨⟩
   --  {!!}
+
+{-
+eq-tiling' : (n m sz sp : ℕ) → sz + n · suc sp + m · suc (n + sp + n · sp) ≡ sz + (n + m · suc n) · suc sp
+eq-tiling' n m sz sp = sym (sz + (n + m · suc n) · suc sp
+  ≡⟨ cong (sz +_) (sym (·-distribʳ n (m · suc n) (suc sp))) ⟩
+    sz + (n · suc sp + m · suc n · suc sp)
+  ≡⟨⟩
+    {!!})
+-}
 
 
 map-take : {A B : Set} {n : ℕ} → (sz : ℕ) → (f : A → B) → (xs : Vec A (sz + n)) → map f (take sz xs) ≡ take sz (map f xs)
@@ -103,10 +113,12 @@ slide-take-drop {zero} {m} {A} sz sp xs = subst (Vec A) (+-zero sz) (take (sz + 
   ≡⟨⟩
     take sz (subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs) ∷
     slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
-  ≡⟨ cong₂ _∷_ (constSubstCommSlice (λ a → Vec A (sz + suc a)) (Vec A sz) (λ _ → take sz)  ((cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) ((subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs))) refl ⟩
+  ≡⟨ cong₂ _∷_ (constSubstCommSlice (λ a → Vec A (sz + suc a)) (Vec A sz) (λ _ → take sz)
+     (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) ))) ((subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs))) refl ⟩
     take sz (subst (Vec A) (cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) (subst (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) xs)) ∷
     slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
-  ≡⟨ cong₂ _∷_ (cong (take sz) (sym (substComposite (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) (cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) xs))) refl ⟩
+  ≡⟨ cong₂ _∷_ (cong (take sz)
+     (sym (substComposite (Vec A) (cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)) (cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) )))) xs))) refl ⟩
     take sz (subst (Vec A) (eq-tiling zero (suc m) sz sp) xs) ∷
     slide sz sp (subst (Vec A) (eq-tiling zero m sz sp) (drop (suc (sp + zero)) (subst (Vec A) (eq-slide m (sz + zero) (sp + zero)) xs)))
   ≡⟨⟩
@@ -118,6 +130,8 @@ slide-take-drop {suc n} {m} {A} sz sp xs = {!!}
 slideJoin : {n m : ℕ} → {A : Set} → (sz : ℕ) → (sp : ℕ) → (xs : Vec A (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →
             slide {n + m · (suc n)} sz sp (subst (Vec A) (eq-tiling n m sz sp) xs) ≡
             join (map (λ (tile : Vec A (sz + n · (suc sp))) → slide {n} sz sp tile) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs))
+
+
 slideJoin {n} {zero} {A} sz sp xs = slide sz sp (subst (Vec A) (eq-tiling n zero sz sp) xs)
   ≡⟨ cong (λ y → slide {n + zero} sz sp y) (substComposite (Vec A) (+-zero (sz + n · suc sp)) (λ i₁ → sz + +-zero n (~ i₁) · suc sp) xs) ⟩
     slide sz sp (subst (Vec A) (λ i₁ → sz + +-zero n (~ i₁) · suc sp) (subst (Vec A) (+-zero (sz + n · suc sp)) xs))
