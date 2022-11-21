@@ -85,9 +85,6 @@ Vec≃VecRep n = isoToEquiv (VecIsoVecRep n)
 Vec≡VecRep : {A : Set} → (n : ℕ) → Vec A n ≡ VecRep A n
 Vec≡VecRep n = ua (Vec≃VecRep n)
 
-VecRep≡Vec : {A : Set} → (n : ℕ) → VecRep A n ≡ Vec A n
-VecRep≡Vec n = ua (invEquiv (Vec≃VecRep n))
-
 
 _·f_ : {n : ℕ} → Fin n → (m : ℕ) → Fin (n · (suc m))
 _·f_ {n} (fst , snd) m = fst · (suc m) , <-·sk snd
