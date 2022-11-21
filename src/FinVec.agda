@@ -17,6 +17,8 @@ open import Cubical.Data.Vec using (Vec; _∷_; []; _++_)
 open import Cubical.Foundations.Function
 open import Cubical.Data.Sigma using (∃; Σ-cong'; Σ≡Prop)
 open import Cubical.Data.Empty as Empty using (⊥; rec)
+import Cubical.Data.Equality as Eq
+open import Arithmetic using (eq-tiling)
 
 VecRep : Set → ℕ → Set
 VecRep A n = Fin n → A
@@ -36,6 +38,7 @@ Vec→VecRep xs f = lookup f xs
 VecRep→Vec : {A : Set} {n : ℕ} → VecRep A n → Vec A n
 VecRep→Vec {n = zero} xs = []
 VecRep→Vec {n = suc n} xs = xs fzero ∷ VecRep→Vec λ x → xs (fsuc x)
+
 
 VecRep→Vec→VecRep : {A : Set} {n : ℕ} (xs : VecRep A n) → Vec→VecRep (VecRep→Vec xs) ≡ xs
 VecRep→Vec→VecRep {n = zero} xs = funExt λ f → Empty.rec (¬Fin0 f)
@@ -82,47 +85,15 @@ Vec≃VecRep n = isoToEquiv (VecIsoVecRep n)
 Vec≡VecRep : {A : Set} → (n : ℕ) → Vec A n ≡ VecRep A n
 Vec≡VecRep n = ua (Vec≃VecRep n)
 
+VecRep≡Vec : {A : Set} → (n : ℕ) → VecRep A n ≡ Vec A n
+VecRep≡Vec n = ua (invEquiv (Vec≃VecRep n))
+
+
 _·f_ : {n : ℕ} → Fin n → (m : ℕ) → Fin (n · (suc m))
 _·f_ {n} (fst , snd) m = fst · (suc m) , <-·sk snd
 
-eq-tiling : (n m sz sp : ℕ) → sz + n · suc sp + m · suc (n + sp + n · sp) ≡ sz + (n + m · suc n) · suc sp
-eq-tiling n m sz sp = sz + n · suc sp + m · suc (n + sp + n · sp)
-  ≡⟨ cong (λ y → sz + n · suc sp + m · suc (y + n · sp)) (+-comm n sp) ⟩
-    sz + n · suc sp + m · (suc sp + n + n · sp)
-  ≡⟨ cong (λ y → sz + n · suc sp + m · y) (sym (+-assoc (suc sp) n (n · sp))) ⟩
-    sz + n · suc sp + m · (suc sp + (n + n · sp))
-  ≡⟨ cong (λ y → sz + n · suc sp + m · (suc sp + y)) (sym (·-suc n sp)) ⟩
-    sz + n · suc sp + m · (suc sp + n · suc sp)
-  ≡⟨ cong (λ y → sz + n · suc sp + m · (suc sp + y)) (·-comm n (suc sp)) ⟩
-    sz + n · suc sp + m · (suc sp + suc sp · n)
-  ≡⟨ cong₂ (λ y z → sz + y + z) (·-comm n (suc sp)) (·-comm m (suc sp + suc sp · n)) ⟩
-    sz + suc sp · n + (suc sp + suc sp · n) · m
-  ≡⟨ cong (λ y → sz + suc sp · n + y) (sym (·-distribʳ (suc sp) (suc sp · n) m)) ⟩
-    sz + suc sp · n + (suc sp · m + suc sp · n · m)
-  ≡⟨ sym (+-assoc sz (suc sp · n) (suc sp · m + suc sp · n · m)) ⟩
-    sz + (suc sp · n + (suc sp · m + suc sp · n · m))
-  ≡⟨ cong (sz +_) (+-assoc (suc sp · n) (suc sp · m) (suc sp · n · m)) ⟩
-    sz + (suc sp · n + suc sp · m + suc sp · n · m)
-  ≡⟨ cong (λ y → sz + (y + suc sp · n · m)) (·-distribˡ (suc sp) n m) ⟩
-    sz + (suc sp · (n + m) + suc sp · n · m)
-  ≡⟨ cong (λ y → sz + (suc sp · (n + m) + y)) (sym (·-assoc (suc sp) n m)) ⟩
-    sz + (suc sp · (n + m) + suc sp · (n · m))
-  ≡⟨ cong (sz +_) (·-distribˡ (suc sp) (n + m) (n · m)) ⟩
-    sz + suc sp · (n + m + n · m)
-  ≡⟨ cong (sz +_ ) (·-comm (suc sp) (n + m + n · m)) ⟩
-    sz + (n + m + n · m) · suc sp
-  ≡⟨ cong (λ y → sz + y · suc sp) (sym (+-assoc n m (n · m))) ⟩
-    sz + (n + (m + n · m)) · suc sp
-  ≡⟨ cong (λ y → sz + (n + (m + y)) · suc sp) (·-comm n m) ⟩
-    sz + (n + (m + m · n)) · suc sp
-  ≡⟨ cong (λ y → sz + (n + y) · suc sp) (sym (·-suc m n)) ⟩
-    refl
-
-
 map : {A B : Set} → ∀ {n} (f : A → B) → VecRep A n → VecRep B n
 map f xs = λ idx → f (xs idx)
-
-
 
 ord₁ : ∀{m n i} → i < m · n → (i / n) < m
 ord₁ {m}{zero}{i} p with ¬-<-zero (subst (i <_)  (sym (0≡m·0 m)) p)
@@ -236,3 +207,8 @@ slideJoin {n} {m} {A} sz sp xs = funExt λ { idx₁@(f₁ , s₁) → funExt λ 
       ≡⟨⟩
       join (map (slide  {n} sz sp) (slide  {m} (sz + n · suc sp) (n + sp + n · sp) xs)) idx₁ idx₂
       ≡⟨⟩ refl } }
+
+eq-slideJoin : {n m : ℕ} → {A : Set} → (sz : ℕ) → (sp : ℕ) → (xs : VecRep A (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →
+            slide {n + m · (suc n)} sz sp (subst (VecRep A) (eq-tiling n m sz sp) xs) Eq.≡
+            join (map (λ (tile : VecRep A (sz + n · (suc sp))) → slide {n} sz sp tile) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs))
+eq-slideJoin {n} {m} sz sp xs = Eq.pathToEq (slideJoin {n} {m} sz sp xs)

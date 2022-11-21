@@ -5,6 +5,7 @@ open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
 open import Cubical.Data.Nat
 open import Cubical.Data.Vec using (Vec; _∷_; []; _++_)
+open import Primitives
 
 eq-distribʳ-· : {A : Set} (n m o : ℕ) → Vec A ((n + m) · o) ≡ Vec A (n · o + m · o)
 eq-distribʳ-· {A} n m o = cong (Vec A) (sym (·-distribʳ n m o))
@@ -14,14 +15,6 @@ eq-assoc-· {A} n m o = cong (Vec A) (·-assoc o m n)
 
 eq-assoc-+ : {A : Set} (n m o : ℕ) → Vec A (o + (m + n)) ≡ Vec A (o + m + n)
 eq-assoc-+ {A} n m o = cong (Vec A) (+-assoc o m n)
-
-map : {A B : Set} → ∀ {n} (f : A → B) → Vec A n → Vec B n
-map f [] = []
-map f (x ∷ xs) = (f x) ∷ (map f xs)
-
-join : {n m : ℕ} {A : Set} → Vec (Vec A n) m → Vec A (m · n)
-join {n} {zero} [] = []
-join {n} {suc m} (xs ∷ xss) = xs ++ (join xss)
 
 ++-assoc : {n m o : ℕ} → {A : Set} → (xs : Vec A n) → (ys : Vec A m) → (zs : Vec A o) →
            (λ i → (eq-assoc-+ {A} o m n) (~ i)) [ (xs ++ ys) ++ zs ≡ xs ++ (ys ++ zs) ]
