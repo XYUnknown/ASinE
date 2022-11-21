@@ -144,4 +144,9 @@ slideJoin {n} {suc m} {A} sz sp xs = sym ( slide sz sp (take (sz + n · suc sp) 
   ≡⟨ cong (slide sz sp (take (sz + n · suc sp) xs) ++_)
      (sym (slideJoin {n} {m} {A} sz sp (drop (suc (n + sp + n · sp)) (subst (Vec A) (eq-slide m (sz + n · suc sp) (n + sp + n · sp)) xs)))) ⟩
     {!!})
- 
+
+tiling : {n m : ℕ} → {A B : Set} → (sz sp : ℕ) → (f : Vec A sz → Vec B sz) →
+         (xs : Vec A (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →
+         join (map (λ (tile : Vec A (sz + n · (suc sp))) →
+         map f (slide {n} sz sp tile)) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs)) ≡ map f (slide {n + m · (suc n)} sz sp (subst (Vec A) (eq-tiling n m sz sp) xs))
+tiling = ?
