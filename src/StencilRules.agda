@@ -53,24 +53,6 @@ map'≡map {A} {B} {n = suc n} f (x ∷ xs) = map' f (x ∷ xs)
   ≡⟨ transportUAop {!!} {!!} (λ T → (invEquiv (Fv.Vec≃VecRep _))) (Fv.map f) (x ∷ xs) ⟩
     {!!}
 
-{- eq-tiling : (n m sz sp : ℕ) → sz + n · suc sp + m · suc (n + sp + n · sp) ≡ sz + (n + m · suc n) · suc sp
-eq-tiling n zero sz sp =  (+-zero (sz + n · suc sp)) ∙ cong (λ y → sz + y · suc sp) (sym (+-zero n))
-eq-tiling zero (suc m) sz sp =  cong (λ x → x + suc (sp + zero + m · suc (sp + zero))) (+-zero sz)
-                             ∙  cong (λ x → sz + suc x) (cong₂ _+_ (+-zero sp) (cong₂ _·_ (sym (·-identityʳ m)) (cong suc (+-zero sp) ))) --
-eq-tiling (suc n) (suc m) sz sp = {!!} -} -- sz + n · suc sp + suc (n + sp + n · sp + m · suc (n + sp + n · sp))
-  -- ≡⟨⟩
-  --  {!!}
-
-{-
-eq-tiling' : (n m sz sp : ℕ) → sz + n · suc sp + m · suc (n + sp + n · sp) ≡ sz + (n + m · suc n) · suc sp
-eq-tiling' n m sz sp = sym (sz + (n + m · suc n) · suc sp
-  ≡⟨ cong (sz +_) (sym (·-distribʳ n (m · suc n) (suc sp))) ⟩
-    sz + (n · suc sp + m · suc n · suc sp)
-  ≡⟨⟩
-    {!!})
--}
-
-
 map-take : {A B : Set} {n : ℕ} → (sz : ℕ) → (f : A → B) → (xs : Vec A (sz + n)) → map f (take sz xs) ≡ take sz (map f xs)
 map-take zero f xs = refl
 map-take (suc sz) f (x ∷ xs) = cong (f x ∷_) (map-take sz f xs)
@@ -115,18 +97,6 @@ slideJoin : {n m : ℕ} → {A : Set} → (sz : ℕ) → (sp : ℕ) → (xs : Ve
             join (map (λ (tile : Vec A (sz + n · (suc sp))) → slide {n} sz sp tile) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs))
 
 slideJoin {n} {m} sz sp xs = Eq.eqToPath (eq-slideJoin {n} {m} sz sp xs)
-{- slideJoin {n} {zero} {A} sz sp xs = slide sz sp (subst (Vec A) (eq-tiling n zero sz sp) xs)
-  ≡⟨ cong (λ y → slide {n + zero} sz sp y) (substComposite (Vec A) (+-zero (sz + n · suc sp)) (λ i₁ → sz + +-zero n (~ i₁) · suc sp) xs) ⟩
-    slide sz sp (subst (Vec A) (λ i₁ → sz + +-zero n (~ i₁) · suc sp) (subst (Vec A) (+-zero (sz + n · suc sp)) xs))
-  ≡⟨ sym (substCommSlice (λ l → Vec A (sz + l · (suc sp))) (λ l → Vec (Vec A sz) (suc l)) (λ _ → slide sz sp) (λ i → +-zero n (~ i)) (subst (Vec A) (+-zero (sz + n · suc sp)) xs)) ⟩
-    subst (λ l → Vec (Vec A sz) (suc l)) (λ i → +-zero n (~ i)) (slide sz sp (subst (Vec A) (+-zero (sz + n · suc sp)) xs))
-  ≡⟨ sym (++-[] (slide sz sp (subst (Vec A) (+-zero (sz + n · suc sp)) xs))) ⟩
-    refl
-slideJoin {n} {suc m} {A} sz sp xs = sym ( slide sz sp (take (sz + n · suc sp) xs) ++
-    join (map (slide {n} sz sp) (slide {m} (sz + n · suc sp) (n + sp + n · sp) (drop (suc (n + sp + n · sp)) (subst (Vec A) (eq-slide m (sz + n · suc sp) (n + sp + n · sp)) xs))))
-  ≡⟨ cong (slide sz sp (take (sz + n · suc sp) xs) ++_)
-     (sym (slideJoin {n} {m} {A} sz sp (drop (suc (n + sp + n · sp)) (subst (Vec A) (eq-slide m (sz + n · suc sp) (n + sp + n · sp)) xs)))) ⟩
-    {!!}) -}
 
 map-λ : {n m : ℕ} → {s t : Set} → (sz : ℕ) → (sp : ℕ) → (f : Vec s sz → Vec t sz) →
           (xs : Vec s (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →
