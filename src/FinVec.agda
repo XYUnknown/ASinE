@@ -10,6 +10,7 @@ open import Cubical.Data.Nat.Order
 open import Cubical.Data.Fin
 open import Cubical.Data.Fin.Properties
 open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.Equiv.Properties
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Univalence
 open import Cubical.Data.Sum hiding (map)
@@ -76,6 +77,7 @@ Vec→VecRep→Vec {n = suc n} (x ∷ xs) = lookup fzero (x ∷ xs) ∷ VecRep�
     ≡⟨ cong (x ∷_) (Vec→VecRep→Vec xs) ⟩
       refl
 
+
 VecIsoVecRep : {A : Set} → (n : ℕ) → Iso (Vec A n) (VecRep A n)
 VecIsoVecRep n = iso Vec→VecRep VecRep→Vec VecRep→Vec→VecRep Vec→VecRep→Vec
 
@@ -84,6 +86,38 @@ Vec≃VecRep n = isoToEquiv (VecIsoVecRep n)
 
 Vec≡VecRep : {A : Set} → (n : ℕ) → Vec A n ≡ VecRep A n
 Vec≡VecRep n = ua (Vec≃VecRep n)
+
+Vec≃VecRep2D : {A : Set} → (n m : ℕ) → Vec (Vec A n) m ≃ VecRep (VecRep A n) m
+Vec≃VecRep2D {A} n m = cong≃ (λ T → Vec T m) (Vec≃VecRep n)  ∙ₑ  Vec≃VecRep m -- pathToEquiv (Vec≡VecRep2D n m)
+
+Vec≡VecRep2D : {A : Set} → (n m : ℕ) → Vec (Vec A n) m ≡ VecRep (VecRep A n) m
+Vec≡VecRep2D {A} n m = ua (Vec≃VecRep2D n m)
+{-
+Vec (Vec A n) m
+  ≡⟨ cong (λ T → Vec T m) (Vec≡VecRep n) ⟩
+    Vec (VecRep A n) m
+  ≡⟨ Vec≡VecRep {A = VecRep A n} m ⟩
+    refl
+-}
+
+VecRepIsoVec : {A : Set} → (n : ℕ) → Iso (VecRep A n) (Vec A n)
+VecRepIsoVec n = iso VecRep→Vec Vec→VecRep Vec→VecRep→Vec VecRep→Vec→VecRep
+
+VecRep≃Vec : {A : Set} → (n : ℕ) → VecRep A n ≃ Vec A n
+VecRep≃Vec n = isoToEquiv (VecRepIsoVec n)
+
+VecRep≡Vec : {A : Set} → (n : ℕ) → VecRep A n ≡ Vec A n
+VecRep≡Vec n = ua (VecRep≃Vec n)
+
+VecRep≡Vec2D : {A : Set} → (n m : ℕ) → VecRep (VecRep A n) m ≡ Vec (Vec A n) m
+VecRep≡Vec2D {A} n m = VecRep (VecRep A n) m
+  ≡⟨ cong (λ T → VecRep T m) (VecRep≡Vec n) ⟩
+    VecRep (Vec A n) m
+  ≡⟨ VecRep≡Vec m ⟩
+    refl
+
+VecRep≃Vec2D : {A : Set} → (n m : ℕ) → VecRep (VecRep A n) m ≃ Vec (Vec A n) m
+VecRep≃Vec2D n m = pathToEquiv (VecRep≡Vec2D n m)
 
 
 _·f_ : {n : ℕ} → Fin n → (m : ℕ) → Fin (n · (suc m))
