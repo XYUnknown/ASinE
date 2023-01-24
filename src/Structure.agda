@@ -41,10 +41,13 @@ isSetVecRep setA = isOfHLevelVecRep 2 setA
 
 -- VecRep→Vec→VecRep could be alot simpler:
 
+_∷ʳ_ : A → VecRep A n → VecRep A (suc n)
+(x ∷ʳ xs) zero = x
+(x ∷ʳ xs) (suc idx) = xs idx
+
 toRep : ∀ {A n} → Vec A n → VecRep A n
 toRep [] = λ ()
-toRep (x ∷ xs) = λ { zero → x
-                   ; (suc n) → toRep xs n }
+toRep (x ∷ xs) = x ∷ʳ toRep xs
 
 fromRep : ∀ {A n} → VecRep A n → Vec A n
 fromRep {n = zero} xs = []
@@ -109,9 +112,8 @@ mapʳ : (f : A → B) → VecRep A n → VecRep B n
 mapʳ f xs idx = f (xs idx)
 
 joinʳ : VecRep (VecRep A n) m → VecRep A (m · n)
-joinʳ {A} {n} {suc m} xs idx with split n idx
-... | inl x = xs zero x
-... | inr x = joinʳ (tailʳ xs) x
+joinʳ {A} {n} {zero} xs ()
+joinʳ {A} {n} {suc m} xs = xs zero ++ʳ joinʳ (tailʳ xs)
 
 -- properties
 
@@ -161,33 +163,56 @@ toRep-map f (x ∷ xs) i zero = f x
 toRep-map f (x ∷ xs) i (suc idx) = toRep-map f xs i idx
 
 
+
+
+map-∷ʳ : ∀{m}(f : A → B)(x : A)(xs : VecRep A m) → mapʳ f  (x ∷ʳ xs) ≡  f x ∷ʳ (mapʳ f xs )
+map-∷ʳ f x xs i zero = f x
+map-∷ʳ f x xs i (suc idx) = mapʳ f xs idx
+
+toRep-join : (xs : Vec (Vec A n) m) → joinʳ (mapʳ toRep (toRep xs)) ≡ toRep (join xs) 
+toRep-join {n = n} [] i ()
+toRep-join {n = n} (x ∷ xs) = funExt (λ idx →
+       (toRep x ++ʳ joinʳ (tailʳ (mapʳ toRep (x ∷ʳ toRep xs)))) idx
+      ≡⟨ cong (λ q → (toRep x ++ʳ joinʳ (tailʳ q)) idx) (map-∷ʳ toRep x (toRep xs)) ⟩
+       (toRep x ++ʳ joinʳ (tailʳ (toRep x ∷ʳ mapʳ toRep (toRep xs)))) idx
+      ≡⟨ refl ⟩    
+       (toRep x ++ʳ joinʳ (mapʳ toRep (toRep xs))) idx
+      ≡⟨ cong (λ q → (toRep x ++ʳ q) idx) (toRep-join xs) ⟩          
+       (toRep x ++ʳ toRep (join xs)) idx   
+      ≡⟨ cong (λ q → q idx) (toRep-++ x (join xs)) ⟩
+       toRep (x ++ join xs) idx   
+      ∎)
+
 VecStrEq : PathP (λ i → VecStr (λ T n → Vec≡VecRep {T} {n} i)) Vec-str VecRep-str
 VecStr.[]ᵛ (VecStrEq i) {T} = transp (λ j → Vec≡VecRep {T} {0} (i ∨ ~ j)) i λ ()
 VecStr._++ᵛ_ (VecStrEq i) {T} {n} {m} = ua→ {e = Vec≃VecRep} {f₁ = _++ʳ_} (λ xs →
       ua→ {e = Vec≃VecRep {T} {m}} (λ ys →
       ua-gluePath (Vec≃VecRep {T} {n + m}) {x = xs ++ ys} (sym (toRep-++ xs ys)))) i
 VecStr.mapᵛ (VecStrEq i) {A} {B} {n} f = ua→ {e = Vec≃VecRep} {f₁ = mapʳ f} (λ xs → ua-gluePath (Vec≃VecRep {B} {n}) {x = map f xs} (toRep-map f xs)) i
-VecStr.joinᵛ (VecStrEq i) {T} {n} {m} xs = {!!} {- glue (λ { (i = i0) → join xs
+VecStr.joinᵛ (VecStrEq i) {T} {n} {m} xs = glue (λ { (i = i0) → join xs
                                                    ; (i = i1) → joinʳ xs})
-                                                (hcomp (λ j → λ { (i = i0) → {!!} j
-                                                                ; (i = i1) → joinʳ xs})
-                                                (joinʳ (unglue (i ∨ ~ i) {!xs!}))) -}
-
+                                                (hcomp (λ j → λ { (i = i0) → toRep-join xs j 
+                                                                 ; (i = i1) → joinʳ xs
+                                                                 }) 
+                                                       -- unglue is what actually transports along the path, so we must unglue once
+                                                       -- for the outer vector and then map unglue to unglue each of the elements. 
+                                                       -- unglue can be thought of as either the identity function or toRep depending
+                                                       -- on where on the interval we are.
+                                                       (joinʳ (mapʳ (unglue (i ∨ ~ i)) (unglue (i ∨ ~ i) xs)))) 
+ 
 -- this is nice but the inlined def is probably easier to read and understand
 
 -- VecStr._++ᵛ_ (VecStrEq {A = A} i) {n} {m} xs ys = glue (λ { (i = i0) → xs ++ ys
 --                                                           ; (i = i1) → xs ++ʳ ys})
 --                                                        (hcomp (λ j → λ { (i = i0) → toRep-++ xs ys j
 --                                                                        ; (i = i1) → xs ++ʳ ys
---                                                                        })
---                                                        ((unglue (i ∨ ~ i) xs) ++ʳ unglue (i ∨ ~ i) ys))
+--                                                                        })--                                                        ((unglue (i ∨ ~ i) xs) ++ʳ unglue (i ∨ ~ i) ys))
 
 {-
 
 For VecStr._++ᵛ_, we have arguments binary function on the type Vec≡VecRep i
 Vec≡VecRep is defined in terms of ua, which is intern defined interms of Glue types
 So Vec≡VecRep i is actually the type:
-
 Glue VecRep (λ { (i = i0) → (Vec , Vec≃VecRep)
                ; (i = i1) → (VecRep , idEquiv VecRep) })
 
