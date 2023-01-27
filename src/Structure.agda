@@ -529,6 +529,9 @@ record ++-zero-str {V} (S : VecStr V) : Type₁ where
 ++ʳ-zero : ∀ {n} (xs : VecRep A n) → PathP (λ i → VecRep A (+-zero n i)) (xs ++ʳ []ʳ) xs
 ++ʳ-zero {A = A} = ++-zero-str.proof (transp (λ i → ++-zero-str (VecStrEq i)) i0 ++-zero-str-Vec)
 
+++ᵃ-zero : ∀ {n} (xs : VecRepA A n) → PathP (λ i → VecRepA A (+-zero n i)) (xs ++ᵃ []ᵃ) xs
+++ᵃ-zero = ++-zero-str.proof (transp (λ i → ++-zero-str (VecAStrEq i)) i0 ++-zero-str-Vec)
+
 -- another example with assoc
 
 record ++-assoc-str {V} (S : VecStr V) : Type₁ where
