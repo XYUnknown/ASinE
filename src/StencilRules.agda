@@ -44,9 +44,10 @@ mapMapFBeforeJoin f xs = sym (joinBeforeMapF f xs)
 eq-comm-+ : {A : Set} (n m : ℕ) → Vec A (n + m) ≡ Vec A (m + n)
 eq-comm-+ {A} n m = cong (Vec A) (+-comm n m)
 
+{-
 map' : {A B : Set} → ∀ {n} (f : A → B) → Vec A n → Vec B n
 map' {A = A} {B = B} {n = n} f = transport (λ i → Fv.Vec≡VecRep {A = A} n (~ i) → Fv.Vec≡VecRep {A = B} n (~ i)) (Fv.map f)
-
+-}
 
 {-
 transportUAop : (A B : Set)  {C D : Set → Set} → (e : ∀ T → C T ≃ D T) (f : C A → C B) (x : D A)
@@ -59,6 +60,15 @@ map'≡map {A} {B} {n = suc n} f (x ∷ xs) = map' f (x ∷ xs)
   ≡⟨⟩
     {!!}
 -}
+
+-- Interface
+
+record VecStr (A : ℕ → Type) : Type where
+  field
+    []ᵛ : A 0
+    _++ᵛ_ : {n m : ℕ} →  A n → A m → A (n + m)
+
+
 
 lemma1 : {A B : Set} → ∀ {n} (f : A → B) →
   ({x₀ : Vec A n} {x₁ : Fv.VecRep A n} → equivFun (Fv.Vec≃VecRep n) x₀ ≡ x₁ → equivFun (Fv.Vec≃VecRep n) (map f x₀) ≡ Fv.map f x₁) →
@@ -164,11 +174,7 @@ slideJoinTrans : {n m : ℕ} → {A : Set} → (sz : ℕ) → (sp : ℕ) →
             (xs : Vec A (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →
             slide {n + m · (suc n)} sz sp (subst (Vec A) (eq-tiling n m sz sp) xs) ≡
             join (map (λ (tile : Vec A (sz + n · (suc sp))) → slide {n} sz sp tile) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs))
-slideJoinTrans {n} {m} {A} sz sp hyp = transp ({!λ i → (xs : Fv.Vec≡VecRep {A = A} (sz + n · (suc sp) + m · suc (n + sp + n · sp)) (~ i)) →
-                                                       slideVec≡slideVecRep {A = A} {n + m · (suc n)} sz sp (~ i) (subst (λ n → Fv.Vec≡VecRep {A = A} n (~ i)) (eq-tiling n m sz sp) xs) ≡
-                                                       joinVec≡joinVecRep {A = A} (~ i) (mapVec≡mapVecRep (λ (tile : Fv.Vec≡VecRep {A = A} (sz + n · (suc sp)) (~ i)) →
-                                                       slideVec≡slideVecRep {A = A} {n} sz sp (~ i) tile) (~ i) (slideVec≡slideVecRep {A = A} {m} (sz + n · (suc sp)) (n + sp + n · sp) (~ i) xs))
-!}) i0 hyp
+slideJoinTrans {n} {m} {A} sz sp hyp = {!!}
 
 map-λ : {n m : ℕ} → {s t : Set} → (sz : ℕ) → (sp : ℕ) → (f : Vec s sz → Vec t sz) →
           (xs : Vec s (sz + n · (suc sp) + m · suc (n + sp + n · sp))) →

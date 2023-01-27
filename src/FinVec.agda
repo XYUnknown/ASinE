@@ -243,3 +243,30 @@ eq-slideJoin : {n m : ℕ} → {A : Set} → (sz : ℕ) → (sp : ℕ) → (xs :
             slide {n + m · (suc n)} sz sp (subst (VecRep A) (eq-tiling n m sz sp) xs) Eq.≡
             join (map (λ (tile : VecRep A (sz + n · (suc sp))) → slide {n} sz sp tile) (slide {m} (sz + n · (suc sp)) (n + sp + n · sp) xs))
 eq-slideJoin {n} {m} sz sp xs = Eq.pathToEq (slideJoin {n} {m} sz sp xs)
+
+{-
+splitFin : {n : ℕ} → (m : ℕ) → Fin (m + n) → Fin m ⊎ Fin n
+splitFin zero fin = inr fin
+splitFin (suc m) (zero , snd) = inl 0
+splitFin (suc m) (suc fst , snd) with splitFin m (fst , (pred-≤-pred snd))
+... | inl (fst₁ , snd₂) = inl (suc fst₁ , suc-≤-suc snd₂)
+... | inr j = inr j
+
+[]ʳ : {A : Set} → VecRep A zero
+[]ʳ x  with ¬Fin0 x
+...     | ()
+
+_++ʳ_ : {A : Set} → {n m : ℕ} →  VecRep A n → VecRep A m → VecRep A (n + m)
+_++ʳ_ {n = n} {m} xs ys x with splitFin n x
+... | inl m = xs m
+... | inr m = ys m
+
+
+tailʳ : {A : Set} → {n : ℕ} → VecRep A (suc n) → VecRep A n
+tailʳ xs (fst , snd) = xs (suc fst , suc-≤-suc snd)
+
+tailʳ-++ʳ : {A : Set} → {n m : ℕ} → ∀ (xs : VecRep A (suc n)) (ys : VecRep A m) → tailʳ (xs ++ʳ ys) ≡ tailʳ xs ++ʳ ys
+tailʳ-++ʳ {n = n} xs ys i x with splitFin n x
+... | inl m = {!xs ?!}
+... | inr m = {!ys ?!}
+-}
