@@ -1,4 +1,5 @@
 {-# OPTIONS --cubical #-}
+{-# OPTIONS -WnoUnsupportedIndexedMatch #-}
 
 module FinVec where
 
@@ -119,7 +120,6 @@ VecRep≡Vec2D {A} n m = VecRep (VecRep A n) m
 VecRep≃Vec2D : {A : Set} → (n m : ℕ) → VecRep (VecRep A n) m ≃ Vec (Vec A n) m
 VecRep≃Vec2D n m = pathToEquiv (VecRep≡Vec2D n m)
 
-
 _·f_ : {n : ℕ} → Fin n → (m : ℕ) → Fin (n · (suc m))
 _·f_ {n} (fst , snd) m = fst · (suc m) , <-·sk snd
 
@@ -230,7 +230,8 @@ slideJoin {n} {m} {A} sz sp xs = funExt λ { idx₁@(f₁ , s₁) → funExt λ 
       ≡⟨ lemma {eq = eq-tiling n m sz sp}{xs}{f₂ + f₁ · suc sp}{<-+-≤ s₂ (≤-·k (pred-≤-pred s₁))} ⟩
       xs (f₂ + f₁ · (suc sp) , subst (f₂ + f₁ · (suc sp) <_) (sym  (eq-tiling n m sz sp)) (<-+-≤ s₂ (≤-·k (pred-≤-pred s₁))))
       ≡⟨ order-irrelevant {xs = xs} (arithmetic f₁ f₂ sp n ) ⟩
-      xs ((f₂ + (f₁ % suc n) · (suc sp) ) + (f₁ / suc n) · (suc (n + sp + n · sp) ), <-+-≤ (<-+-≤ s₂ (≤-·k (pred-≤-pred ( ord₂ {suc m}{suc n} s₁)))) (≤-·k {f₁ / suc n }{m} (pred-≤-pred (ord₁ s₁))))
+      xs ((f₂ + (f₁ % suc n) · (suc sp) ) + (f₁ / suc n) · (suc (n + sp + n · sp) ), <-+-≤ (<-+-≤ s₂ (≤-·k (pred-≤-pred ( ord₂ {suc m}{suc n} s₁))))
+      (≤-·k {f₁ / suc n }{m} (pred-≤-pred (ord₁ s₁))))
       ≡⟨⟩
       slide  {m} (sz + n · suc sp) (n + sp + n · sp) xs (f₁ / suc n , ord₁ s₁ ) (f₂ + (f₁ % suc n) · (suc sp) , <-+-≤ s₂ (≤-·k (pred-≤-pred ( ord₂ {suc m}{suc n} s₁))))
       ≡⟨⟩

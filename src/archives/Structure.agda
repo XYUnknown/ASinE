@@ -1,4 +1,5 @@
 {-# OPTIONS --cubical #-}
+{-# OPTIONS -WnoUnsupportedIndexedMatch #-}
 
 open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
@@ -49,7 +50,7 @@ lookup : ∀ {n} {A : Set} → FinA n → Vec A n → A
 lookup {zero} fin [] with ¬Fin0 fin
 ...                       | ()
 lookup {suc n} (zero , snd) (x ∷ xs) = x
-lookup {suc n} (suc fst , snd) (x ∷ xs) = lookup {n} (fst , (pred-≤-pred snd)) xs
+lookup {suc n} (suc fst , snd)  (x ∷ xs) = lookup {n} (fst , (pred-≤-pred snd)) xs
 
 order-irrelevant : {A : Set} {a : ℕ}{xs : VecRepA A a}{i j : ℕ}{p₁ : i < a}{p₂ : j < a} → i ≡ j → xs (i , p₁) ≡ xs (j , p₂)
 order-irrelevant {A}{a}{xs}{i}{j}{p₁}{p₂} e = cong (λ x → xs x) (Σ≡Prop (λ _ → isProp≤) e)
@@ -417,6 +418,11 @@ toRepA-++ (x ∷ xs) ys i (suc fst , snd) = lemma i
              ≡⟨⟩
              Vec→VecRepA (x ∷ xs ++ ys) (suc fst , snd) ∎
 
+toRepA-join : (xs : Vec (Vec A n) m) → joinᵃ (mapᵃ Vec→VecRepA (Vec→VecRepA xs)) ≡ Vec→VecRepA (join xs)
+toRepA-join = {!!}
+
+toRepA-slide : (sz sp : ℕ) (xs : Vec A (sz + n · (suc sp))) → (slideᵃ {n = n} sz sp (Vec→VecRepA xs)) ≡ Vec→VecRepA (map Vec→VecRepA (slide sz sp xs))
+toRepA-slide = {!!}
 
 -- Structural equality of vec and vec-rep-a
 VecAStrEq : PathP (λ i → VecStr (λ T n → Vec≡VecRepA {T} {n} i)) Vec-str VecRepA-str
@@ -425,8 +431,18 @@ VecStr._++ᵛ_ (VecAStrEq i) {T} {n} {m} = ua→ {e = Vec≃VecRepA} {f₁ = _++
       ua→ {e = Vec≃VecRepA {T} {m}} (λ ys →
       ua-gluePath (Vec≃VecRepA {T} {n + m}) {x = xs ++ ys} (sym (toRepA-++ xs ys)))) i
 VecStr.mapᵛ (VecAStrEq i) {A} {B} {n} f = ua→ {e = Vec≃VecRepA} {f₁ = mapᵃ f} (λ xs → ua-gluePath (Vec≃VecRepA {B} {n}) {x = map f xs} (toRepA-map f xs)) i
-VecStr.joinᵛ (VecAStrEq i) = {!!}
-VecStr.slideᵛ (VecAStrEq i) = {!!}
+VecStr.joinᵛ (VecAStrEq i) {T} {n} {m} xs = glue (λ { (i = i0) → join xs
+                                                   ; (i = i1) → joinᵃ xs})
+                                                (hcomp (λ j → λ { (i = i0) → toRepA-join xs j
+                                                                ; (i = i1) → joinᵃ xs})
+                                                (joinᵃ (mapᵃ (unglue (i ∨ ~ i)) (unglue (i ∨ ~ i) xs))))
+
+-- WIP: This is not working becasue somehow we cannot deal with the inner dimension created by slide
+-- I need a better understanding of hcomp
+VecStr.slideᵛ (VecAStrEq i) {T} {n} sz sp xs = glue (λ { (i = i0) → slide sz sp xs
+                                                 ; (i = i1) → slideᵃ {n = n} sz sp xs})
+                                                 (hcomp ( (λ j → λ { (i = i0) → {!mapᵃ VecRepA→Vec (toRepA-slide {n = n} sz sp xs j)!}
+                                                                ; (i = i1) → slideᵃ sz sp xs})) {!slideᵃ {n = n} sz sp (unglue (i ∨ ~ i) xs)!} )
 
 
 -- structure identity

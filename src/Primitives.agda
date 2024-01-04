@@ -1,4 +1,5 @@
 {-# OPTIONS --cubical #-}
+{-# OPTIONS -WnoUnsupportedIndexedMatch #-}
 
 module Primitives where
 
