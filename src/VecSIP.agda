@@ -23,7 +23,7 @@ open import Cubical.Relation.Nullary
 open import Cubical.Data.Empty as Empty using (⊥; rec)
 open import Cubical.Data.Fin renaming (Fin to FinA)
 open import Cubical.Data.Fin.Properties
-open import src.Arithmetic using (eq-slide)
+open import Arithmetic using (eq-slide)
 
 
 private
@@ -32,15 +32,10 @@ private
     A B T : Type
 
 -- missing properties of Vec
-
 ++-zero : ∀ (xs : Vec A n) → PathP (λ i → Vec A (+-zero n i)) (xs ++ []) xs
 ++-zero [] = refl
 ++-zero (x ∷ xs) i = x ∷ ++-zero xs i
 
--- personally, I have never ran into any issue with recursive fin in cubical
-
-VecRep : (A : Type) → ℕ → Type
-VecRep A n = Fin n → A
 
 -- The arithmetic representation of vec
 VecRepA : Set → ℕ → Set
@@ -148,52 +143,6 @@ order-lemma {m}{zero}{i} p with ¬-<-zero (subst (i <_) (sym (0≡m·0 m)) p)
 ... | ()
 order-lemma {m}{suc n} p = suc-≤-suc (zero-≤)
 
-
-
--- this is 56 lines for Vec!
--- also, Vec is atleast hlevel 2, VecRep doesn't have to be
-
-isOfHLevelVecRep : (n : HLevel) → isOfHLevel n A → isOfHLevel n (VecRep A m)
-isOfHLevelVecRep n hA = isOfHLevelΠ n λ _ → hA
-
-isSetVecRep : isSet A → isSet (VecRep A n)
-isSetVecRep setA = isOfHLevelVecRep 2 setA
-
--- VecRep→Vec→VecRep could be alot simpler:
-
-toRep : ∀ {A n} → Vec A n → VecRep A n
-toRep [] = λ ()
-toRep (x ∷ xs) = λ { zero → x
-                   ; (suc n) → toRep xs n }
-
-fromRep : ∀ {A n} → VecRep A n → Vec A n
-fromRep {n = zero} xs = []
-fromRep {n = suc n} xs = xs zero ∷ (fromRep (λ x → xs (suc x)))
-
-toRep-fromRep : ∀ {A n} (xs : VecRep A n) → toRep (fromRep xs) ≡ xs
-toRep-fromRep {n = zero} xs i ()
-toRep-fromRep {n = suc n} xs i zero = xs zero
-toRep-fromRep {n = suc n} xs i (suc m) = toRep-fromRep {n = n} (λ n → xs (suc n)) i m
-
-fromRep-toRep : ∀ {A n} (xs : Vec A n) → fromRep (toRep xs) ≡ xs
-fromRep-toRep [] = refl
-fromRep-toRep (x ∷ xs) i = x ∷ fromRep-toRep xs i
-
-Iso-Vec-VecRep : ∀ {A n} → Iso (Vec A n) (VecRep A n)
-Iso-Vec-VecRep = iso toRep fromRep toRep-fromRep fromRep-toRep
-
-Vec≃VecRep : Vec A n ≃ VecRep A n
-Vec≃VecRep = isoToEquiv Iso-Vec-VecRep
-
-Vec≡VecRep : Vec A n ≡ VecRep A n
-Vec≡VecRep = ua Vec≃VecRep
-
--- subst lemma from zulip
-
-subst-VecRep : {A : Set} {a b : ℕ} (eq : a ≡ b) (xs : VecRep A a) (n : Fin b)
-    → subst (VecRep A) eq xs n ≡ xs (subst Fin (sym eq) n)
-subst-VecRep equ xs n = transportRefl (xs (subst Fin (sym equ) n))
-
 -- operations for Vec
 map : (f : A → B) → Vec A n → Vec B n
 map f [] = []
@@ -214,38 +163,6 @@ drop (suc n) (x ∷ xs) = drop n xs
 slide : (sz : ℕ) → (sp : ℕ) → Vec A (sz + n · (suc sp)) → Vec (Vec A sz) (suc n)
 slide {A = A} {n = zero} sz sp xs = subst (Vec A) (+-comm sz zero) xs ∷ []
 slide  {A = A} {n = suc n} sz sp xs = take sz xs ∷ slide sz sp (drop (suc sp) (subst (Vec A) (eq-slide n sz sp) xs))
-
--- operations for VecRep
-tailʳ : VecRep A (suc n) → VecRep A n
-tailʳ xs x = xs (suc x)
-
-dropʳ : (n : ℕ) → VecRep A (n + m) → VecRep A m
-dropʳ n xs idx = xs (n ⊕ idx)
-
-
-[]ʳ : VecRep A zero
-[]ʳ = λ ()
-
-_∷ʳ_ : A → VecRep A n → VecRep A (suc n)
-(x ∷ʳ xs) zero = x
-(x ∷ʳ xs) (suc idx) = xs idx
-
-_++ʳ_ : VecRep A n → VecRep A m → VecRep A (n + m)
-_++ʳ_ {n = n} {m} xs ys x with split n x
-... | inl m = xs m
-... | inr m = ys m
-
-mapʳ : (f : A → B) → VecRep A n → VecRep B n
-mapʳ f xs idx = f (xs idx)
-
-joinʳ : VecRep (VecRep A n) m → VecRep A (m · n)
-joinʳ {A} {n} {suc m} xs idx with split n idx
-... | inl x = xs zero x
-... | inr x = joinʳ (tailʳ xs) x
-
-slideʳ : (sz : ℕ) → (sp : ℕ) → VecRep A (sz + n · (suc sp)) → VecRep (VecRep A sz) (suc n)
-slideʳ {n = n} sz sp xs zero idx₂ = xs (up idx₂)
-slideʳ {n = n} sz sp xs (suc x) idx₂ = {!!}
 
 -- operations for VecRepA
 
@@ -275,15 +192,7 @@ slideᵃ : (sz : ℕ) → (sp : ℕ) → VecRepA A (sz + n · (suc sp)) → VecR
 slideᵃ {n = n} sz sp xs (fst₁ , snd₁) (fst₂ , snd₂) = xs (fst₂ + fst₁ · (suc sp) , <-+-≤ snd₂ (≤-·k {fst₁}{n} (pred-≤-pred snd₁)))
 
 
--- properties
-
-tailʳ-++ʳ : ∀ (xs : VecRep A (suc n)) (ys : VecRep A m) → tailʳ (xs ++ʳ ys) ≡ tailʳ xs ++ʳ ys
-tailʳ-++ʳ {n = n} xs ys i x with split n x
-... | inl m = xs (suc m)
-... | inr m = ys m
-
--- structure of vecs defined in terms of [] and ++
-
+-- structure of vecs
 record VecStr (V : Type → ℕ → Type) : Type₁ where
   field
     []ᵛ : V T 0
@@ -299,12 +208,6 @@ VecStr.mapᵛ Vec-str = map
 VecStr.joinᵛ Vec-str = join
 VecStr.slideᵛ Vec-str = slide
 
-VecRep-str : VecStr (VecRep)
-VecStr.[]ᵛ VecRep-str = []ʳ
-VecStr._++ᵛ_ VecRep-str = _++ʳ_
-VecStr.mapᵛ VecRep-str = mapʳ
-VecStr.joinᵛ VecRep-str = joinʳ
-VecStr.slideᵛ VecRep-str = slideʳ
 
 VecRepA-str : VecStr (VecRepA)
 VecStr.[]ᵛ VecRepA-str = []ᵃ
@@ -444,139 +347,3 @@ VecStr.slideᵛ (VecAStrEq i) {T} {n} sz sp xs = glue (λ { (i = i0) → slide s
                                                  (hcomp ( (λ j → λ { (i = i0) → {!mapᵃ VecRepA→Vec (toRepA-slide {n = n} sz sp xs j)!}
                                                                 ; (i = i1) → slideᵃ sz sp xs})) {!slideᵃ {n = n} sz sp (unglue (i ∨ ~ i) xs)!} )
 
-
--- structure identity
-
-toRep-head : (xs : Vec A n) → (ys : Vec A m) → (a : Fin n) → toRep xs a ≡ toRep (xs ++ ys) (up a)
-toRep-head (x ∷ xs) ys zero = refl
-toRep-head (x ∷ xs) ys (suc a) = toRep-head xs ys a
-
-toRep-tail : (xs : Vec A n) → (ys : Vec A m) → (a :  Fin m) →
-             toRep ys a ≡ toRep (xs ++ ys) (n ⊕ a)
-toRep-tail [] ys a = refl
-toRep-tail (x ∷ xs) ys a = toRep-tail xs ys a
-
-
-toRep-++ : ∀ (xs : Vec A n) (ys : Vec A m) → toRep xs ++ʳ toRep ys ≡ toRep (xs ++ ys)
-toRep-++ [] ys = refl
-toRep-++ (x ∷ xs) ys i zero = x
-toRep-++ (_∷_ {n} x xs) ys i (suc o) = lemma i
-  where
-  lemma =
-    (toRep (x ∷ xs) ++ʳ toRep ys) (suc o)    ≡⟨⟩
-    tailʳ (toRep (x ∷ xs) ++ʳ toRep ys) o    ≡⟨ cong (λ a → a o) (tailʳ-++ʳ (toRep (x ∷ xs)) (toRep ys)) ⟩
-    (tailʳ (toRep (x ∷ xs)) ++ʳ toRep ys) o  ≡⟨⟩
-    (toRep xs ++ʳ toRep ys) o                ≡⟨ cong (λ a → a o) (toRep-++ xs ys) ⟩
-    (toRep (xs ++ ys)) o                     ≡⟨⟩
-    toRep ((x ∷ xs) ++ ys) (suc o)           ∎
-
-toRep-map : (f : A → B) → (xs : Vec A n) → toRep (map f xs) ≡ mapʳ f (toRep xs)
-toRep-map f (x ∷ xs) i zero = f x
-toRep-map f (x ∷ xs) i (suc idx) = toRep-map f xs i idx
-
-toRep-join : (xs : Vec (Vec A n) m) → joinʳ (mapʳ toRep (toRep xs)) ≡ toRep (join xs)
-toRep-join [] idx ()
-toRep-join {n = n} {m = suc m} (x ∷ xs) i idx with split n idx | desplit-ident n idx
-... | inl a | p = (toRep x a ≡⟨ toRep-head x (join xs) a ⟩
-                                toRep (x ++ join xs) (up a)
-                             ≡⟨ cong (toRep (x ++ join xs)) p ⟩
-                                toRep (x ++ join xs) idx
-                             ∎) i
-... | inr a | p = (joinʳ (λ idx₁ → toRep ((toRep xs) idx₁)) a
-                     ≡⟨ cong (λ y → y a) (toRep-join xs) ⟩
-                       toRep (join xs) a
-                     ≡⟨ toRep-tail x (join xs) a ⟩
-                        toRep (x ++ join xs) (n ⊕ a)
-                     ≡⟨ cong (toRep (x ++ join xs)) p ⟩
-                        toRep (x ++ join xs) idx ∎) i
-
-VecStrEq : PathP (λ i → VecStr (λ T n → Vec≡VecRep {T} {n} i)) Vec-str VecRep-str
-VecStr.[]ᵛ (VecStrEq i) {T} = transp (λ j → Vec≡VecRep {T} {0} (i ∨ ~ j)) i λ ()
-VecStr._++ᵛ_ (VecStrEq i) {T} {n} {m} = ua→ {e = Vec≃VecRep} {f₁ = _++ʳ_} (λ xs →
-      ua→ {e = Vec≃VecRep {T} {m}} (λ ys →
-      ua-gluePath (Vec≃VecRep {T} {n + m}) {x = xs ++ ys} (sym (toRep-++ xs ys)))) i
-VecStr.mapᵛ (VecStrEq i) {A} {B} {n} f = ua→ {e = Vec≃VecRep} {f₁ = mapʳ f} (λ xs → ua-gluePath (Vec≃VecRep {B} {n}) {x = map f xs} (toRep-map f xs)) i
-VecStr.joinᵛ (VecStrEq i) {T} {n} {m} xs =  glue (λ { (i = i0) → join xs
-                                                   ; (i = i1) → joinʳ xs})
-                                                (hcomp (λ j → λ { (i = i0) → toRep-join xs j
-                                                                ; (i = i1) → joinʳ xs})
-                                                (joinʳ (mapʳ (unglue (i ∨ ~ i)) (unglue (i ∨ ~ i) xs))))
-VecStr.slideᵛ (VecStrEq i) {T} {n} xs = {!!}
-
--- this is nice but the inlined def is probably easier to read and understand
-
--- VecStr._++ᵛ_ (VecStrEq {A = A} i) {n} {m} xs ys = glue (λ { (i = i0) → xs ++ ys
---                                                           ; (i = i1) → xs ++ʳ ys})
---                                                        (hcomp (λ j → λ { (i = i0) → toRep-++ xs ys j
---                                                                        ; (i = i1) → xs ++ʳ ys
---                                                                        })
---                                                        ((unglue (i ∨ ~ i) xs) ++ʳ unglue (i ∨ ~ i) ys))
-
-{-
-
-For VecStr._++ᵛ_, we have arguments binary function on the type Vec≡VecRep i
-Vec≡VecRep is defined in terms of ua, which is intern defined interms of Glue types
-So Vec≡VecRep i is actually the type:
-
-Glue VecRep (λ { (i = i0) → (Vec , Vec≃VecRep)
-               ; (i = i1) → (VecRep , idEquiv VecRep) })
-
-i = i0 ⊢ xs ++ ys
-i = i1 ⊢ xs ++ʳ ys
-
-Left hand of Glue square applys first projection of Vec≃VecRep which is toRep
-Right hand side is idEquiv, so nothing to do here
-Base - unglue gives us an element VecRep that is toRep xs (xs : Vec) on the left and xs on the right (xs : VecRep)
-
--}
-
--- now we can define propositions in terms of the abstract structure
-
-record ++-zero-str {V} (S : VecStr V) : Type₁ where
-  open VecStr S
-  field
-    proof : (xs : V T n) → PathP (λ i → V T (+-zero n i)) (xs ++ᵛ []ᵛ) xs
-
-++-zero-str-Vec : ++-zero-str (Vec-str)
-++-zero-str.proof ++-zero-str-Vec = ++-zero
-
--- and transport it to our desired type
-
-++ʳ-zero : ∀ {n} (xs : VecRep A n) → PathP (λ i → VecRep A (+-zero n i)) (xs ++ʳ []ʳ) xs
-++ʳ-zero {A = A} = ++-zero-str.proof (transp (λ i → ++-zero-str (VecStrEq i)) i0 ++-zero-str-Vec)
-
-++ᵃ-zero : ∀ {n} (xs : VecRepA A n) → PathP (λ i → VecRepA A (+-zero n i)) (xs ++ᵃ []ᵃ) xs
-++ᵃ-zero = ++-zero-str.proof (transp (λ i → ++-zero-str (VecAStrEq i)) i0 ++-zero-str-Vec)
-
--- another example with assoc
-
-record ++-assoc-str {V} (S : VecStr V) : Type₁ where
-  open VecStr S
-  field
-    proof : ∀ {n m o} (xs : V T n) (ys : V T m) (zs : V T o)
-          → PathP (λ i → V T (+-assoc n m o i)) (xs ++ᵛ (ys ++ᵛ zs)) ((xs ++ᵛ ys) ++ᵛ zs)
-
-++-assoc-str-Vec : ++-assoc-str (Vec-str)
-++-assoc-str.proof ++-assoc-str-Vec xs ys zs i = ++-assoc xs ys zs (~ i) -- assoc is the wrong way round in std lib!
-
-++ʳ-assoc : ∀ {n m o} (xs : VecRep A n) (ys : VecRep A m) (zs : VecRep A o)
-          → PathP (λ i → VecRep A (+-assoc n m o i)) (xs ++ʳ (ys ++ʳ zs)) ((xs ++ʳ ys) ++ʳ zs)
-++ʳ-assoc {A = A} = ++-assoc-str.proof (transp (λ i → ++-assoc-str (VecStrEq i)) i0 ++-assoc-str-Vec)
-
--- this is good if you want to consider many vector reprensentations, but if you only ever consider 2, then
--- just transporting might be simpler (no glue mess)
-
-_++ʳ⁼_ : ∀ {n m} (xs : VecRep A n) (ys : VecRep A m) → VecRep A (n + m)
-_++ʳ⁼_ {A = A} {n = n} {m} = transport (λ i → Vec≡VecRep {A} {n} i → Vec≡VecRep {A} {m} i → Vec≡VecRep {A} {n + m} i) _++_
-
-++ʳ→++ʳ⁼ : ∀ {n m} (xs : VecRep A n) (ys : VecRep A m) → xs ++ʳ ys ≡ xs ++ʳ⁼ ys
-++ʳ→++ʳ⁼ xs ys = cong₂ _++ʳ_ (sym (transportRefl xs)) (sym (transportRefl ys))
-               ∙ lemma {xs = transport refl xs}
-               ∙ sym (transportRefl _)
-  where
-    lemma : ∀ {xs : VecRep A n} {ys : VecRep A m} → xs ++ʳ ys ≡ toRep (fromRep xs ++ fromRep ys)
-    lemma {xs = xs} {ys} = cong₂ _++ʳ_ (sym (toRep-fromRep xs)) (sym (toRep-fromRep ys))
-                         ∙ toRep-++ (fromRep xs) (fromRep ys)
-
--- the reason why transportRefl keeps popping up is transport can compute for simple closed types, but in the
--- general case it doesnt (and VecRep hits that)

@@ -63,12 +63,12 @@ map'≡map {A} {B} {n = suc n} f (x ∷ xs) = map' f (x ∷ xs)
 -}
 
 -- Interface
-
+{-
 record VecStr (A : ℕ → Type) : Type where
   field
     []ᵛ : A 0
     _++ᵛ_ : {n m : ℕ} →  A n → A m → A (n + m)
-
+-}
 
 
 lemma1 : {A B : Set} → ∀ {n} (f : A → B) →

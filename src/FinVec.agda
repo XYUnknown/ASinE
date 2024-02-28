@@ -34,13 +34,13 @@ lookup {suc n} (suc fst , snd) (x ∷ xs) = lookup {n} (fst , (pred-≤-pred snd
 order-irrelevant : {A : Set} {a : ℕ}{xs : VecRep A a}{i j : ℕ}{p₁ : i < a}{p₂ : j < a} → i ≡ j → xs (i , p₁) ≡ xs (j , p₂)
 order-irrelevant {A}{a}{xs}{i}{j}{p₁}{p₂} e = cong (λ x → xs x) (Σ≡Prop (λ _ → isProp≤) e)
 
+-- Isomorphism
 Vec→VecRep : {A : Set} {n : ℕ} → Vec A n → VecRep A n
 Vec→VecRep xs f = lookup f xs
 
 VecRep→Vec : {A : Set} {n : ℕ} → VecRep A n → Vec A n
 VecRep→Vec {n = zero} xs = []
 VecRep→Vec {n = suc n} xs = xs fzero ∷ VecRep→Vec λ x → xs (fsuc x)
-
 
 VecRep→Vec→VecRep : {A : Set} {n : ℕ} (xs : VecRep A n) → Vec→VecRep (VecRep→Vec xs) ≡ xs
 VecRep→Vec→VecRep {n = zero} xs = funExt λ f → Empty.rec (¬Fin0 f)
@@ -123,9 +123,6 @@ VecRep≃Vec2D n m = pathToEquiv (VecRep≡Vec2D n m)
 _·f_ : {n : ℕ} → Fin n → (m : ℕ) → Fin (n · (suc m))
 _·f_ {n} (fst , snd) m = fst · (suc m) , <-·sk snd
 
-map : {A B : Set} → ∀ {n} (f : A → B) → VecRep A n → VecRep B n
-map f xs = λ idx → f (xs idx)
-
 ord₁ : ∀{m n i} → i < m · n → (i / n) < m
 ord₁ {m}{zero}{i} p with ¬-<-zero (subst (i <_)  (sym (0≡m·0 m)) p)
 ... | ()
@@ -165,6 +162,10 @@ order-lemma : ∀{m n i} → i < m · n → n > 0
 order-lemma {m}{zero}{i} p with ¬-<-zero (subst (i <_) (sym (0≡m·0 m)) p)
 ... | ()
 order-lemma {m}{suc n} p = suc-≤-suc (zero-≤)
+
+-- Primitives
+map : {A B : Set} → ∀ {n} (f : A → B) → VecRep A n → VecRep B n
+map f xs = λ idx → f (xs idx)
 
 join : {n m : ℕ} {A : Set} → VecRep (VecRep A n) m → VecRep A (m · n)
 join {n} {m} xs (i , p) = xs (i / n , ord₁ p ) ( i % n , ord₂ {m}{n} p )
