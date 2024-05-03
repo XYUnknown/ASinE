@@ -15,6 +15,7 @@ open import Cubical.Data.Nat.Order
 open import Cubical.Data.Sigma using (∃; Σ-cong'; Σ≡Prop)
 open import Cubical.Data.Sum hiding (map)
 open import Cubical.Data.Sum.Properties
+open import Cubical.Data.Prod hiding (map)
 open import Cubical.Data.Empty
 open import Cubical.Data.Vec using (Vec; _∷_; []; _++_; ++-assoc)
 open import Cubical.Data.Fin.Recursive
@@ -164,7 +165,23 @@ slide : (sz : ℕ) → (sp : ℕ) → Vec A (sz + n · (suc sp)) → Vec (Vec A 
 slide {A = A} {n = zero} sz sp xs = subst (Vec A) (+-comm sz zero) xs ∷ []
 slide  {A = A} {n = suc n} sz sp xs = take sz xs ∷ slide sz sp (drop (suc sp) (subst (Vec A) (eq-slide n sz sp) xs))
 
+uncons : Vec A (suc n) → A × Vec A n
+uncons (x ∷ xs) = x , xs
+
 -- operations for VecRepA
+
++-suc-zero : ∀ n → n + suc 0 ≡ suc n
++-suc-zero n = n + suc 0
+ ≡⟨ +-suc n 0 ⟩
+ suc (n + 0)
+ ≡⟨ cong suc (+-zero n) ⟩
+ refl
+
+zero-< : 0 < suc n
+zero-< {n} = n , +-suc-zero n
+
+headᵃ : VecRepA A (suc n) → A
+headᵃ xs = xs (zero , zero-<)
 
 tailᵃ : VecRepA A (suc n) → VecRepA A n
 tailᵃ xs (fst , snd) = xs (suc fst , suc-≤-suc snd)
@@ -176,6 +193,9 @@ tailᵃ xs (fst , snd) = xs (suc fst , suc-≤-suc snd)
 _∷ᵃ_ : A → VecRepA A n → VecRepA A (suc n)
 (x ∷ᵃ xs) (zero , snd) = x
 (x ∷ᵃ xs) (suc fst , snd) = xs (fst , pred-≤-pred snd)
+
+unconsᵃ : VecRepA A (suc n) →  A × (VecRepA A n)
+unconsᵃ xs = headᵃ xs , tailᵃ xs
 
 _++ᵃ_ : VecRepA A n → VecRepA A m → VecRepA A (n + m)
 _++ᵃ_ {n = n} {m = m} xs ys idx with Iso.fun (Fin+≅Fin⊎Fin n m) idx
