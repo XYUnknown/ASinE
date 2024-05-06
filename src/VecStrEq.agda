@@ -29,7 +29,6 @@ open import Arithmetic using (eq-slide)
 private
   variable
     n m o : ℕ
-    T : Type
     ℓ ℓ' : Level
     A B : Type ℓ
 
@@ -151,6 +150,7 @@ record VecStr (A : Type ℓ) (V : ℕ → Type ℓ) : Type ℓ where
     []ᵛ : V 0
     consᵛ : A → V n → V (suc n)
     unconsᵛ : V (suc n) → A × V n
+    -- mapᵛ : (f : A → B) → V n → V n
 
   -- now we can define vector operations in terms of the primitives
   -- we will get the concrete definitions for each representation for free!
@@ -179,9 +179,27 @@ Vec-str : {A : Type ℓ} → VecStr A (Vec A)
 VecStr.[]ᵛ (Vec-str) = []
 VecStr.consᵛ (Vec-str) = _∷_
 VecStr.unconsᵛ (Vec-str) = uncons
+-- VecStr.mapᵛ (Vec-str) = map
 
 VecRepA-str : {A : Type ℓ} → VecStr A (VecRepA A)
 VecStr.[]ᵛ VecRepA-str = []ᵃ
 VecStr.consᵛ VecRepA-str = _∷ᵃ_
 VecStr.unconsᵛ VecRepA-str = unconsᵃ
+-- VecStr.mapᵛ VecRepA-str = mapᵃ
+
+toRepA-cons : ∀ x (xs : Vec A n) → Vec→VecRepA (x ∷ xs) ≡ x ∷ᵃ (Vec→VecRepA xs)
+toRepA-cons x xs i (zero , snd) = x
+toRepA-cons x xs i (suc fst , snd) = Vec→VecRepA xs ((fst , pred-≤-pred snd))
+
+{- toRepA-uncons : (xs : Vec A (suc n)) → ((proj₁ (uncons xs)) , Vec→VecRepA (proj₂ (uncons xs))) ≡ unconsᵃ (Vec→VecRepA xs)
+toRepA-uncons = {!!}
+-}
+
+VecStrEq : PathP (λ i → VecStr A (λ n → Vec≡VecRepA {A = A} {n} i)) Vec-str VecRepA-str
+VecStr.[]ᵛ (VecStrEq {A = A} i) =  transp ((λ j → Vec≡VecRepA {A = A} {0} (i ∨ ~ j))) i []ᵃ
+VecStr.consᵛ (VecStrEq {A = A} i) {n} = λ x → ua→ {e = Vec≃VecRepA {A = A} {n}} {f₁ = _∷ᵃ_ x} (λ xs →
+  ua-gluePath (Vec≃VecRepA {A = A} {suc n}) {x = x ∷ xs} (toRepA-cons x xs)) i
+VecStr.unconsᵛ (VecStrEq {A = A} i) {n = n} = ua→ {e = Vec≃VecRepA {A = A} {suc n}} {B = λ i → A × (Vec≡VecRepA i) } {f₀ = uncons} {f₁ = unconsᵃ}
+  ((λ { (x ∷ xs) j → x , ua-gluePath (Vec≃VecRepA {A = A} {n}) {x = xs} {!!} j })) i
+
 
